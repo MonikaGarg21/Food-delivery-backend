@@ -30,6 +30,10 @@ const orderSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  location: {
+    lat: { type: Number, default: 28.6139 },
+    lng: { type: Number, default: 77.209 },
+  },
 });
 
 const orderModel =

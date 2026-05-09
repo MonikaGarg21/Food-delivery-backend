@@ -1,7 +1,9 @@
 import express from "express";
-import "dotenv/config"; // This line do to work first import dotenv and then use dotenv.config
+import "dotenv/config";
 import cors from "cors";
-// import dotenv from "dotenv";
+import http from "http";
+import { Server } from "socket.io";
+
 import connectDB from "./config/db.js";
 import foodRouter from "./routes/foodRoute.js";
 import userRouter from "./routes/userRoute.js";
@@ -12,26 +14,54 @@ import orderRouter from "./routes/orderRoute.js";
 const app = express();
 const port = 4000;
 
-// dotenv.config();
+// 🔥 create http server (IMPORTANT)
+const server = http.createServer(app);
+
+// 🔥 socket setup
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
+
+// 🔥 socket connection
+io.on("connection", (socket) => {
+  console.log("🔌 User connected:", socket.id);
+
+  // join specific order room
+  socket.on("joinOrder", (orderId) => {
+    socket.join(orderId);
+    console.log(`User joined order room: ${orderId}`);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("❌ User disconnected:", socket.id);
+  });
+});
+
+// ✅ export io (IMPORTANT for controller)
+export { io };
 
 // middleware
 app.use(express.json());
 app.use(cors());
 
-// Connect DB
+// DB connect
 connectDB();
 
-// api endpoints
+// routes
 app.use("/api/food", foodRouter);
 app.use("/images", express.static("uploads"));
 app.use("/api/user", userRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/order", orderRouter);
 
+// test route
 app.get("/", (req, res) => {
   res.send("API Working");
 });
 
-app.listen(port, () => {
-  console.log(`Server Started on http://localhost:${port}`);
+// ❗ IMPORTANT: use server.listen NOT app.listen
+server.listen(port, () => {
+  console.log(`🚀 Server running on http://localhost:${port}`);
 });
